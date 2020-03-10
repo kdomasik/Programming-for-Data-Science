@@ -1,0 +1,144 @@
+---
+title: "Solutions for ST340 Lab 6"
+date: "2019--20"
+output: pdf_document
+---
+# Validation
+
+The dataset `SmokeCancer.csv` shows lung cancer rates by U.S. state in 2010, with a number of covariates such as Federal Year 2010 cigarette sales per 100,000.
+
+(a) Read the data file on lung cancer and create a data frame with variables of interest.
+```{r}
+X = read.table("SmokeCancer.csv", header=TRUE,sep=",",row.names=1)
+LungCancer = data.frame(CigSalesRate=100000*X[,"FY2010Sales"]/X[,"Pop2010"],
+                        X[,c("CigYouthRate","CigAdultRate","LungCancerRate")])
+```
+
+(b) Fit a linear model for LungCancerRate (`?lm` for a reminder about `lm`):
+```{r}
+summary(lm(LungCancerRate~CigSalesRate+CigYouthRate+CigAdultRate,data=LungCancer))
+```
+
+(c) Write a function that takes a formula and does LOOCV (leave one out cross validation) with respect to the squared error of the linear model for the given formula. Use it to find a good linear model for `LungCancerRate` in terms of `CigSalesRate`, `CigYouthRate` and `CigAdultRate`. You could also try using transformations of the covariates by adding terms such as `I(CigSalesRate^2)` and `I(CigSalesRate*CigAdultRate)` to your formulae. 
+
+    (By good, we mean that it is the optimal, in terms of cross-validation error, linear model using some or all of these covariates.)
+
+```{r}
+loocv<-function(formula) {
+  s=0
+  for (i in 1:dim(LungCancer)[1]) {
+    l=lm(formula,LungCancer[-i,])
+    s=s+(predict(l,LungCancer[i,])-LungCancer$LungCancerRate[i])^2    
+  }
+  s/dim(LungCancer)[1]
+}
+
+loocv("LungCancerRate~CigSalesRate+             CigAdultRate")
+loocv("LungCancerRate~CigSalesRate+CigAdultRate             +I(CigSalesRate^2)")
+loocv("LungCancerRate~             CigAdultRate             ")
+loocv("LungCancerRate~CigSalesRate+CigYouthRate+CigAdultRate")
+loocv("LungCancerRate~CigSalesRate+CigAdultRate             +I(CigSalesRate*CigAdultRate)")
+loocv("LungCancerRate~             CigYouthRate+CigAdultRate")
+loocv("LungCancerRate~CigSalesRate+CigAdultRate             +I(CigAdultRate^2)")
+loocv("LungCancerRate~CigSalesRate                          ")
+loocv("LungCancerRate~CigSalesRate+CigYouthRate             ")
+```
+
+(d) The Akaike Information criterion (AIC) and Bayesian Information criterion (BIC) are analytic approximations to the validation step. They are (different) ways of quantifying the trade-off between model complexity (in terms of, e.g. the number of parameters) and the fit to the training data (in terms of likelihood), defined as follows:
+
+* Akaike Information criterion (AIC) = $(2 \times \#\text{parameters} - 2 \times \log(\text{likelihood}))$, and 
+* Bayesian information criterion (BIC) = $(\log(\text{amount of data}) \times \#\text{parameters} - 2 \times \log(\text{likelihood}))$
+
+    Write a function that takes a formula and then calculates AIC and BIC. Use your function to find a *good* linear model for `LungCancerRate`, as in (b).
+
+```{r}
+aic<-function(formula) {
+  AIC(lm(formula,data=LungCancer))
+#   #Equivalent to 
+#   l=lm(formula,data=LungCancer)
+#   p=length(l$coefficients)+1
+#   logLik(l)
+#   2*p-2*logLik(l) # or:
+#   2*p-2*sum(log(dnorm(l$residuals,sd=summary(l)$sigma)))
+}
+
+bic<-function(formula) {
+  BIC(lm(formula,data=LungCancer))
+}
+
+aic("LungCancerRate~CigSalesRate+CigAdultRate             ")
+aic("LungCancerRate~CigSalesRate+CigYouthRate+CigAdultRate")
+aic("LungCancerRate~CigSalesRate+CigAdultRate             +I(CigAdultRate^2)")
+aic("LungCancerRate~CigSalesRate+CigAdultRate             +I(CigSalesRate^2)")
+aic("LungCancerRate~CigSalesRate+CigAdultRate             +I(CigSalesRate*CigAdultRate)")
+aic("LungCancerRate~             CigAdultRate             ")
+aic("LungCancerRate~             CigYouthRate+CigAdultRate")
+aic("LungCancerRate~CigSalesRate                          ")
+aic("LungCancerRate~CigSalesRate+CigYouthRate             ")
+
+bic("LungCancerRate~CigSalesRate+             CigAdultRate")
+bic("LungCancerRate~CigSalesRate+CigYouthRate+CigAdultRate")
+bic("LungCancerRate~             CigYouthRate+CigAdultRate")
+bic("LungCancerRate~             CigAdultRate             ")
+bic("LungCancerRate~CigSalesRate                          ")
+bic("LungCancerRate~CigSalesRate+CigYouthRate             ")
+```
+
+# The curse of dimensionality
+
+Suppose $N$ points are chosen uniformly at random in the $D$-dimensional hypercube $[0,1]^D$. Consider a smaller hypercube $H = [0,r]^D$ in the "corner" of $[0,1]^D$.
+
+(a) How big does $r$ have to be for there to be approximately one of the $N$ points lying in $H$?
+
+> $(1/N)^{1/D}$.
+
+(b) How big does $r$ have to be for there to be approximately 10 of the $N$ points lying in $H$?
+
+> $(10/N)^{1/D}$.
+
+(c) How big does $r$ have to be for there to be approximately $\frac{N}{2}$ of the $N$ points lying in $H$?
+
+> $(1/2)^{1/D}$ which is approximately 1 for large $D$.
+
+Check each of your answers by simulation.
+
+```{r}
+a1 = vector(); a2 = vector(); a3 = vector()
+N = 10000
+for (D in 1:10) {
+  p = matrix(runif(N*D),nrow = N, ncol = D)
+  r1 = (1/N)^(1/D)
+  r2 = (10/N)^(1/D)
+  r3 = (1/2)^(1/D)
+  a1[D] = sum(rowSums(p < r1) == D) # Should average 1
+  a2[D] = sum(rowSums(p < r2) == D) # Should average 10
+  a3[D] = sum(rowSums(p < r3) == D) # Should average N/2
+}
+a1
+a2
+a3
+```
+
+# Distance functions
+
+(a) Write a function to calculate the $\ell_1$ distances between pairs of row vectors in two matrices:
+```{r eval=FALSE}
+distances.l1 <- function(x,y) {
+  apply(y,1,function(p) apply(x,1,function(q) sum(abs(p-q))))
+}
+```
+
+(b) Write a similar function to calculate a matrix of pairwise $\ell_2$ distances:
+```{r eval=FALSE}
+distances.l2 <- function(x,y)
+  apply(y,1,function(p) apply(x,1,function(q) sqrt(sum((p-q)^2))))
+```
+
+(c) Write a similar function to calculate the Mahalanobis distance between the row vectors, given a $D \times D$ covariance matrix $S$:
+```{r eval=FALSE}
+distances.maha <-function(x,y) {
+  C=cov(x)
+  C.inv=solve(C)
+  apply(y,1,function(p) apply(x,1,function(q) sqrt( (p-q) %*% C.inv %*% (p-q) )))
+}
+```

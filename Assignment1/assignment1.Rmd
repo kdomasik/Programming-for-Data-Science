@@ -1,0 +1,266 @@
+---
+title: "ST340 Assignment no 1"
+author: "Jakub Domasik"
+date: "24 10 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1.
+### (a)
+The function __merge()__ takes two ordered arrays _a_ and _b_ as input. It then returns an array consisting of the ordered elements of arrays _a_ and _b_.
+``` {r chunk1a}
+merge <- function(a, b) {
+  i <- 1
+  j <- 1
+  k <- 1
+  d <- numeric(0)
+  while (i <= length(a) && j <= length(b)) {
+    if (a[i] < b[j]) {
+      d[k] = a[i]
+      i = i + 1
+      k = k + 1
+    } else {
+      d[k] = b[j]
+      j = j + 1
+      k = k + 1
+    }
+  }
+  while (i <= length(a)) {
+    d[k] = a[i]
+    i = i + 1
+    k = k + 1
+  }
+  while (j <= length(b)) {
+    d[k] = b[j]
+    j = j + 1
+    k = k + 1
+  }
+  return(d)
+}
+```
+
+### (b)
+The function __mergesort()__ takes as input an array _a_ and returns an array containing its elements but ordered.
+
+``` {r chunk1b}
+mergesort <- function(a) {
+  k <- ceiling(len/2)
+  if (length(a) >1) {
+    array1 <- mergesort(a[1:k])
+    array2 <- mergesort(a[(k+1):length(a)])
+    merge(array1, array2)
+  }
+  else {
+    a
+  }
+}
+```
+
+### (c)
+Proof by mathematical induction:  
+__Base case__, $x = 1$: The size of the array is 1 and we know that an array of this size is already sorted.    
+__Inductive hypothesis__: assume __mergesort()__ works for $n=m$ i.e. it returns an input array in the correct sorted order for any array of size $2,  3,..., m$.  
+__Inductive step__: I want to show that __mergesort()__ works also for $n = m+1$.
+Let $A = (a_{1}, a_{2},..., a_{m+1})$ be an array of $m+1$ elements, where $a_{1},..., a_{m+1}\in R$. Let $\alpha = (a_{1},..., a_{\frac {k+1}{2}})$ and $\beta = (a_{\frac{k+1}{2}+1},..., a_{m+1})$. Let also $A = \alpha \cup \beta$.  
+Then $mergesort(A) = merge(mergesort(\alpha), mergesort(\beta))$.
+
+Since $|\alpha| < n$ and $|\beta| <n$, by the inductive hypothesis, __mergesort($\alpha$)__ and __mergesort($\beta$)__ works.
+To remind, we want to merge two arrays in the sorted order. 
+Therefore, the result holds  for $n = m + 1$.  
+We have shown by induction that __mergesort()__ works as wished for any array of length $n \in N$.
+
+### (d)
+
+__Base case__, $n = 1$: There is $T(1) = 0$ and $1 * log_{2}(1) = 0$. Therefore, $T(n) <= n * log_{2}(n)$ is  fulfilled for $n = 1$.  
+__Inductive hypothesis__: suppose the result is  true for $n=m$, where _m_ is the power of 2. Therefore, there are at most $T(m) = m * log_{2}(m)$ comparisons needed in the worst case scenario.  
+__Inductive step__: If we assume $n = 2^m$, then we wish to prove that this result also holds for $n =2(m+1)$. Again, we must calculate the number of comparisons necessary in the worst case scenario. Knowing that __mergesort()__ algorithm splits the array and then  uses __merge()__ to merge the sorted arrays, we calculate the total number of comprisons as follows: 
+
+$T(n) = 2T(\frac{n}{2}) + n \rightarrow T(2m) = 2T(\frac{2m}{2}) + 2m = 2T(m) + 2m = 2m*log_{2}(m) + 2m$ (using our inductive hypothesis)
+
+$=2m*(log_{2}(2m) - 1) + 2m = 2m*log_{2}(2m) - 2m + 2m = 2m*log_{2}(2m)$
+
+Therefore, the largest  number of comparisons needed by __mergesort()__ in the worst case scenario is $T(2m) = 2k*log_{2}(2m)$. Concluding, we  have shown that $T(n) \leq n* log_{2}(n)$ using mathematical induction. 
+
+### (e)
+
+__Quicksort()__ behaves similarly to __mergesort()__ in a way that both of them split an array into two and use recursion to sort elements of both parts of the array. 
+The main difference between them is a way in which they split the array. __mergesort()__ split the array into halves and __quicksort()__ chooses an arbitrary pivot and split the array into an array with numbers smaller than the pivot and the one with larger numbers than the pivot. This means that __quicksort()__ does not generally split the array into halves.
+We know that __quicksort()__  has the complexity in the worst-case  scenario equals to $O(n^2)$. 
+However, __mergesort()__ has complexity $O(n*log_2(n))$, which is slightly better than __quicksort()__. This means that __mergesort()__ should be a little better as it generally need less time to sort an array than __quicksort()__. 
+
+# 2. 
+
+###  (a)
+
+The function __majority_element()__ takes an array as an input and returns its majority element if there exists one. If not, it returns a statement:   _"No majority element"_.
+
+``` {r chunk2a}
+majority_element <- function(a) {
+  len<- length(a)
+  half_len <- length(a) / 2
+  if (len == 1) {
+    # if the array has length 1, this element is the majority  element. 
+    return(a)
+  }
+  else if (len == 2) {
+    # if an array has length 2, then the majority element exists
+    # only if these elements are equal
+    if (a[1] == a[2]) {
+      return(a[1])
+    } else {
+      return("No majority element")
+    }
+  }
+  else if (len > 2) {
+    # if array has length > 2, we must halve it and call majority_element for both of the halves
+    m1 <- majority_element(a[1:half_len])
+    m2 <- majority_element(a[(half_len + 1):len])
+    if (m1 == m2) {
+      # if  both halves have the same majority element, it  must also be
+      # the majority element of the whole array
+      return(m1)
+    }
+    else if (m1 != "No majority element" && m2 =="No majority element") {
+      # if only  1st half of the array has a majority element
+      # we must check if this number is also a majority element
+      # of the whole array
+      lc <- sum(a == m1)
+      if (lc > half_len) {
+        return(m1)
+      } 
+      # if it is not, then the array has no majority element
+      else {
+        return("No majority element")
+        3
+      }
+    }
+    else if (m2 != "No majority element" && m1 == "No majority element") {
+      # if only  2nd half of the array has a majority element
+      # we must check if this number is also a majority element
+      # of the whole array
+      rc <- sum(a == m2)
+      if (rc > half_len) {
+        return(m2)
+      }
+      # if it is not, then the array has no majority element
+      else {
+        return("No majority element")
+      }
+    }
+    else if (m2 != "No majority element" && m1 != "No majority element" && m1 != m2){
+      # if both halves  have different majority elements,  we  must check
+      # if any of  them is the majority element of the whole array
+      lc <- sum(a == m1)
+      rc <- sum(a == m2)
+      if (lc > half_len) {
+        return(m1)
+      }
+      else if (rc > half_len) {
+        return(m2)
+      } 
+      # If not, that means, that there is no majority element of this array
+      else {
+        return("No majority element")
+      }
+    } else {
+      # if none of the halves have a majority element, then there is no majority element
+      return("No majority element")
+    }
+  }
+}
+# Testing the function
+majority_element(c(1,2,3,4,1,2,3,6))
+majority_element(c(4,5,4,6,4,7,4,4))
+majority_element(c(1:20))
+```
+
+I will prove that the algorithm works using mathematical induction. 
+
+__Base  case()__: $n = 1$, the array is of size 1, so its only element is its majority element. 
+For $n = 2$ the array has a majority element, only if $a[1] = a[2]$.  
+__Inductive hypothesis__: assume __majority_element()__ works for  $n=m$, where m is the power of 2.  
+__Inductive  step__: Assume $n = 2m$. Then, the array is split into halves, so we have two new arrays of length _m_. We apply  __majority_element()__ function to both of them and we find the majority element by our inductive hypothesis. 
+Following the construction of our algorithm, there are 5 scenarios, which may happen: 
+
+* If both halves have the same majority element, then this is the majority element of the whole array. The element appears in the first half more than m/2 times and more than m/2 times in the second half. Therefore, it appears more than m times in the whole array so it is a majority element of the array. 
+* If none of the halves has the majority element, then the whole array also does not have a majority element because none of the elements appeared more than m/2 in any of the halves so there is no element which appears more than m times in the whole array.
+* If only the first half has a  majority element, then the algorithm checks if this element is the majority element of  the whole array. It is impossible that any other  element is the array's  majority element(no element can occur more than m times in the array). If it occurs more than m times in the whole array, then it is the majority element of the whole array. If not, the array has no majority element. 
+* if only the second half has a majority element, we apply the same rules as in the previous scenario. 
+* If both halves have different majority elements, the algorithm compares both of them with all elements of the whole array. If any of them appears more than m times, then it is the majority element. Otherwise, the array has no majority element. 
+
+Therefore, by mathematical induction, we proved that our algorithm works for $n = 2k$. 
+
+### (b)
+
+The array of length _n_ has to be divided into two parts. Then we apply the __majority_element()__ function to each of them. The worst-case scenario is when the algorithm has to compare different majority element of both halves to all elements of the whole matrix. Then the $T(n)$  looks like:
+
+$T(n) = 2T(\frac{n}{2}) + 2n$. 
+
+Therefore, in general: 
+$T(n) \leq 2T(\frac{n}{2}) + 2n$. 
+
+Using induction from __1(d)__, we may state that the upper bound for thenumber of comparisons is: 
+$T(n)<= 2n*log_{2}(n)$ so __majority_element()__ has the worst case performance in $O(n*log_{2}(n))$. 
+
+# 3. 
+
+As we want to minimise $f(k, b_{1},...,b_{k}, d_{1},...,d_{k}, c_{1},..., c_{k}) = exp(||A - B||_{F}) + k*(m+n+1)$, the first step is to calculate the greyscale representation of the image and store it as matrix A. Next, we compute Singular Value Decomposition usind __svd__ function. It returns the matrixes: an m x m orthogonal matrix _U_, an n x n orthogonal matrix  _V_ and vectorwith singular values _d_. 
+
+
+Then, we look through _k_ between $1$ and $min(m,n)$. For each value of _k_, we calculate low rank matrix approximation using the code from __Lab 2__. We use the _Frobenius Form_ to determine quality of the approximation. Finally, we save the value of _k_ which gave the lowest value of the function mentioned above as _best_k_. 
+
+We know that the variable _best_k_ minimises the function because the code below evaluates the function for each possible value of _k_. As _A_ is fixed and _B_ is dependent of _k_, we only need to look through the values of _k_ in order  to find the best solution. As we see, $k = 257$ is the optimal solution. 
+``` {r}
+# load the image
+load("pictures.rdata")
+img <- images[[4]]
+
+# calculate the dimensions ofimg
+
+dims <- dim(img)
+m <- dims[1]
+n <- dims[2]
+
+# matrix A holds grayscale version of the image
+
+A <- matrix(0,m,n)
+
+for (i in 1:m) {
+  for (j in 1:n) {
+    A[i,j] <- sum(img[i,j,])/3
+  }
+}
+
+# SVD decomposition
+
+dec <- svd(A)
+
+best_loss <- Inf
+best_k <- -1
+
+# use a look between 1 and min(m,n) to find k that minimises the function
+
+for(k in 1:min(m,n)) {
+  if (k==1) {
+    B <- dec$d[1] * dec$u[,1]%*%t(dec$v[,1])
+  }
+  else {
+    B <- dec$u[,1:k]%*%diag(dec$d[1:k])%*%t(dec$v[,1:k])
+  }
+  
+  # calculate Frobenius norm of A and approx B
+  F_norm <- norm(A - B, type = "F")
+  #loss specified by the function
+  loss <- exp(F_norm) + k*(m+n+1)
+  # best value ofk
+  if(loss< best_loss) {
+    best_loss <- loss
+    best_k <- k
+  }
+}
+print(best_k)
+```

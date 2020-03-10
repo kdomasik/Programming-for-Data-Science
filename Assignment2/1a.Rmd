@@ -1,0 +1,42 @@
+---
+title: "Assignment 2"
+author: "Jakub Domasik"
+date: "5 11 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Q1
+### (a)
+
+We want to find stationary point of:
+
+$$f(u_{1:K}) = \sum_{i = 1}^{n} \sum_{k = 1}^{K} (\gamma_{ik} log( \prod_{j=1}^{n} u_{kj}^{x_{ij}}(1 - u_{kj})^{1 - x_{ij}}))$$
+
+First, we expand the function:
+
+$$f(u_{1:K}) = \sum_{i = 1}^{n} \sum_{i = 1}^{n} (\gamma_{ik} log( \prod_{j=1}^{n} \mu_{kj}^{x_{ij}}(1 - \mu_{kj})^{1 - x_{ij}})) = \sum_{i = 1}^{n} \sum_{i = 1}^{n} (\gamma_{ik} \sum_{j=1}^{P}(log(u_{kj}^{x_{ij}}(1-u_{kj})^{1-x_{ij}}))
+=  \sum_{i = 1}^{n} \sum_{i = 1}^{n} (\gamma_{ik} \sum_{j=1}^{P}(x_{ij} log u_{kj} + (1-x_{ij}log(1-u_{kj})))$$
+
+Next, we differentiate $f(u_{k})$ and set it equal to $0$:
+
+$$f(u_{k})' =  \sum_{i = 1}^{n} \sum_{k = 1}^{K} (\gamma_{ik} \sum_{j=1}^{P}(\frac{x_{ij}}{u_{kj}} - \frac{1-x_{ij}}{1-u_{kj}})) = 0$$
+
+The sum is qeual to 0, if for every k we have: 
+
+ $$\sum_{i = 1}^{n} (\gamma_{ik} \sum_{j=1}^{P}(\frac{x_{ij}}{u_{kj}} - \frac{1-x_{ij}}{1-u_{kj}})) = 0$$
+ 
+ Now, $\frac{x_{ij}}{u_{kj}} - \frac{1-x_{ij}}{1-u_{kj}}$
+ are the entries of $\frac{x_{i}}{u_{k}} - \frac{1-x_{i}}{1-u_{k}}$  and  $x_{ij} \in {0,1}$ so:
+ 
+ $$f(u_{k})' =  \sum_{i = 1}^{n} \sum_{k = 1}^{K} (\gamma_{ik} \sum_{j=1}^{P}(\frac{x_{ij}}{u_{kj}} - \frac{1-x_{ij}}{1-u_{kj}})) = 0 \iff \sum_{i=1}^{n}(\gamma_{ik} \sum_{j=1}^{P}(\frac{x_{i}}{u_{k}} - \frac{1-x_{i}}{1-u_{k}})) = 0$$
+ Next, 
+ $$ \sum_{i=1}^{n}(\gamma_{ik} \sum_{j=1}^{P}(\frac{x_{i}}{u_{k}} - \frac{1-x_{i}}{1-u_{k}})) = 
+ \sum_{i=1}^{n} \gamma_{ik} \frac{x_{i}}{u_{k}} - \sum_{i=1}^{n} \gamma_{ik} \frac{1-x_{i}}{1-u_{k}}=0$$
+ So,
+ $$ \sum_{i=1}^{n} \gamma_{ik} \frac{x_{i}}{u_{k}} = \sum_{i=1}^{n} \gamma_{ik} \frac{1-x_{i}}{1-u_{k}}=0 \iff \\ u_{k} \sum_{i=1}^{n} \gamma_{ik}(1-x_{i}) = (1-u_{k}) \sum_{i=1}^{n} \gamma_{ik} x_{i} \iff \\
+ u_{k}(\sum_{i=1}^{n} \gamma_{ik} x_{i} + \sum_{i=1}^{n} \gamma_{ik} (1-x_{i})) = \sum_{i=1}^{n} \gamma_{ik} x_{i} \iff \\ u_{k} = \frac{ \sum_{i=1}^{n} \gamma_{ik} x_{i}}{(\sum_{i=1}^{n} \gamma_{ik} x_{i} + \sum_{i=1}^{n} \gamma_{ik} (1-x_{i}))} = \frac{\sum_{i=1}^{n} \gamma_{ik}x_{i}}{\sum_{i=1}^{n}\gamma_{ik}}$$
+ 

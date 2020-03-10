@@ -1,0 +1,212 @@
+---
+title: "Assignment_3_Report"
+author: "Jakub Domasik"
+date: "7 12 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, cache.lazy=TRUE, cache=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Q1
+### (a)
+
+Here is the provided gradient descent function.
+```{r chunk1}
+gradient.descent <- function(f, gradf, x0, iterations=1000, eta=0.2) {
+x<-x0
+for (i in 1:iterations) {
+  if(i<50) {
+cat(i,"/",iterations,": ",x," ",f(x),"\n")
+  }
+x<-x-eta*gradf(x)
+}
+x
+}
+```
+
+``` {r chunk2}
+gradient.ascent <- function(f, df, x0, iterations=1000, eta=0.2) {
+  gradient.descent(f, df, x0, iterations, -eta)
+}
+```
+
+To test the function, the following code is used.
+``` {r chunk3}
+f <-function(x) { (1+x^2)^(-1) }
+gradf<-function(x) { -2*x*(1+x^2)^(-2) }
+gradient.ascent(f,gradf,3,40,0.5)
+```
+### (b) (i)
+We shall prove that function $f(x_{1}, x_{2}) = (x_{1}-1)^{2} + 100(x_{1}^{2} - x_{2})^{2}$ has one unique stationary point which is a minimum.  
+
+1. Find stationary points. 
+(a) Calculate derivatives of $f(x_{1}, x_{2})$.
+
+$$\frac{df}{dx_{1}} = 2(x_{1} - 1) + 4*100x_{1}(x_{1}-x_{2}) = 2x_{1} - 2 + 400x_{1}^{3} - 400x_{1}x_{2}$$
+$$\frac{df}{dx_{2}} = 200 x_{1}^2 + 200x_{2}$$
+(b) Set  the derivatives equal to $0$.
+
+$$(1)2x_{1} - 2 + 400x_{1}^{3} - 400x_{1}x_{2} = 0$$
+$$(2)200 x_{1}^2 + 200x_{2} = 0$$
+(c) Solve the system of  two equations. 
+
+$$(2) \implies x_{2} = x_{1}^{2}$$
+$$(1) \implies 2x_{1} - 2 + 400x_{1}^{3} - 400x_{1}^{3} \implies x_{1} = 1 \implies x_{2} = 1$$
+
+Therefore, we found a unique stationary point at $(1,1)$
+
+2. Check what kind of stationary point is $(1,1)$.
+(a) Calculate $2^{nd}$ derivatives.
+
+$$\frac{d^{2}f}{dx_{1}^{2}} = 2 + 1200x_{1} +  400x_{2}$$
+$$\frac{d^{2}f}{dx_{2}^{2}} = 200$$
+$$\frac{d^{2}f}{dx_{1}x_{2}} = - 400x_{1}$$
+$$f(1,1) = 1602 > 0$$
+
+$$det(D^{2}f) = f_{x_{1}x_{1}} * f_{x_{2}x_{2}}  - f_{x_{1}x_{2}}^{2} = 160400$$
+$D^{2}f(1,1)$ is positive definite so (1,1) is a minimum. Therefore, we proved that the provided function f has  a unique minimum.
+
+### (b)(ii)
+
+For the function f as defined above, gradient of f is  returned using _gradient_f_ function
+``` {r chunk4}
+f <- function(x) (x[1]-1)^2 + 100*(x[1]^2-x[2])^2
+gradient_f <- function(x) {
+  return (c( 2 * x[1] - 2 + 400 * x[1]^3 - 400 * x[2] * x[1],
+            -200 * x[1]^2 + 200* x[2]))
+}
+```
+### (b) (iii)
+
+Gradient descent function is  used to find the minimum of the function f. I am asked to start  the gradient algorithm at $x_{0} = (3,4)$. We set number of iterations to 30 000 and $alpha = 0.0007$. The converges to $0$ as  $(x_{1}, x_{2})$ goes to $(1,1)$.
+
+```{r chunk5}
+gradient.descent(f, gradient_f, c(3, 4), 30000, 0.0007)
+```
+### (c)
+
+The function _gradient.momentum_ performs the algorithm: gradient descent with momentum. We use it to find the minimum of the function f defined  in part(b). 
+
+```{r chunk6}
+gradient.momentum <- function(f, gradf, x0, iterations = 1000, eta = 0.2, alpha) {
+  x1 <- x0
+  x2 <- x1 - eta * gradf(x1)
+  cat(1, " : ", x1, ", ", f(x1), "\n")
+  cat(2, " : ", x2, ", ", f(x2), "\n")
+  for( i in 3:iterations) {
+    x <- x2 - eta * gradf(x2) + alpha * (x2 - x1)
+    x1 <- x2
+    x2 <- x
+    if(i < 50) {
+    cat(i, " : ", x, ", ", f(x), "\n")
+  }
+  }
+  x
+
+}
+
+gradient.momentum(f, gradient_f, c(3,4), 30000, 0.0005, 0.03)
+```
+
+# Q2
+### (a)
+``` {r chunk7}
+load("mnist.tiny.RData")
+train.X=train.X/255
+test.X=test.X/255
+library(grid)
+grid.raster(array(aperm(array(train.X[1:50,],c(5,10,28,28)),c(4,1,3,2)),c(140,280)),
+            interpolate=FALSE)
+library(e1071)
+```
+At first, we run SVM with the linear kernel.
+``` {r chunk8, warning = FALSE}
+svm(train.X,train.labels,type="C-classification",kernel="linear",cross=3)$tot.accuracy
+```
+Now, we use the polynomial kernel and try different degrees to find the optimal value. 
+``` {r chunk9, warning = FALSE}
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=2,coef=1,cross=3)$tot.accuracy
+
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=5,coef=1,cross=3)$tot.accuracy
+
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=10,coef=1,cross=3)$tot.accuracy
+
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=13,coef=1,cross=3)$tot.accuracy
+
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=14,coef=1,cross=3)$tot.accuracy
+
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=15,coef=1,cross=3)$tot.accuracy
+
+svm(train.X,train.labels,type="C-classification",kernel="poly",degree=16,coef=1,cross=3)$tot.accuracy
+
+```
+The SVM with linear kernel has the accuracy of 85.8% and performs better than SVM with polynomial kernel of 1st degree. SVM performs the best overall with polynomial kernel of 13th degree. 
+
+Now, we try the radial kernel for the SVM and look for the optimal gamma.
+
+```{r  chunk10, warning = FALSE}
+set.seed(1)
+svm(train.X, train.labels, type = "C-classification", kernel = "radial",
+    gamma = 1, coef = 1, cross = 3)$tot.accuracy
+
+set.seed(1)
+svm(train.X, train.labels, type = "C-classification", kernel = "radial",
+    gamma = 0.5, coef = 1, cross = 3)$tot.accuracy
+
+set.seed(1)
+svm(train.X, train.labels, type = "C-classification", kernel = "radial",
+    gamma = 0.01, coef = 1, cross = 3)$tot.accuracy
+set.seed(1)
+svm(train.X, train.labels, type = "C-classification", kernel = "radial",
+gamma = 0.03, coef = 1, cross = 3)$tot.accuracy
+
+set.seed(1)
+svm(train.X, train.labels, type = "C-classification", kernel = "radial",
+    gamma = 0.02, coef = 1, cross = 3)$tot.accuracy
+```
+
+We see that the optimal value of gamma in this case is 0.03. For this value of gamma SVM with radial kernel has higher accuracy than any of SVMs with polynomial or linear kernels. 
+
+### (b)
+
+```{r chunk11, warning = FALSE}
+
+log.C.range <- log(c(0.001, 0.01, 0.1, 1, 10, 100))
+log.gamma.range <- log(c(0.001, 0.01, 0.1, 1, 10, 100))
+
+comb <- matrix(ncol = 2, nrow = length(log.gamma.range) * length(log.C.range))
+count <- 0
+results <- c()
+
+for(i in 1:length(log.C.range)) {
+  for(j in 1:length(log.gamma.range)) {
+    count <- count + 1
+    comb[count, ] <- c(gamma = exp(log.C.range[i]), exp(log.gamma.range[j]))
+  }
+}
+
+
+for ( i in 1:nrow(comb)) {
+  accuracy <- svm(train.X, train.labels, type = "C-classification", kernel = "rad",
+                  cost = comb[i,1], gamma = comb[i,2], degree = 2, coef = 1, cross = 3)$tot.accuracy
+  results <- c(results, accuracy)
+}
+
+row <- which.max(results)
+comb[row, ]
+max(results)
+```
+Ascalculated above, the optimal values for our model are: cost = 10, gamma = 0.01.
+Now, we train our model on the _tiny_ training set and test it on the training set. In the end, we check the accuracy of  our model. 
+```{r chunk12, warning = FALSE}
+model <- svm(train.X, train.labels, type = "C-classification", kernel = "rad",
+             cost = 10, gamma = 0.01, degree = 2, coef = 1)
+test.predictions <- as.vector(predict(model, test.X), mode = "numeric")
+
+accuracy <- sum(diag(table(test.labels, test.predictions)))/sum(table(test.labels, test.predictions))
+
+accuracy
+```
+The model got  the accuracy of 91.3% on the test set.
